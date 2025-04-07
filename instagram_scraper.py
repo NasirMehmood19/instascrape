@@ -8,7 +8,7 @@ import cloudinary.uploader
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
-from datetime import datetime
+from datetime import timezone
 import os
 import base64
 
