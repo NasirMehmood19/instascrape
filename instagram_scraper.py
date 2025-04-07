@@ -101,7 +101,7 @@ INSTAGRAM_PAGES = {
 }
 
 # --- Load Instagram Cookies ---
-def load_cookies():
+def load_cookies(driver):
     try:
         # Fetch the base64 encoded cookie data from the environment variable
         base64_cookie_data = os.getenv("COOKIES_BASE64")  # Replace with your secret variable name
@@ -134,7 +134,7 @@ def get_latest_instagram_post(page_url):
     driver = webdriver.Chrome(options=insta_options)
     driver.get("https://www.instagram.com/")
     time.sleep(5)
-    load_cookies(driver, "instagram_cookies.pkl")
+    load_cookies(driver)
     driver.refresh()
     time.sleep(5)
     driver.get(page_url)
