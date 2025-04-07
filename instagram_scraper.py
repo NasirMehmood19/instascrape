@@ -101,18 +101,18 @@ INSTAGRAM_PAGES = {
 }
 
 # --- Load Instagram Cookies ---
-    try:
-        # Decode from base64 and write the pkl file
-        with open("instagram_cookies.pkl", "wb") as f:
-            f.write(base64.b64decode(os.getenv("COOKIES_BASE64")))
+try:
+    # Decode from base64 and write the pkl file
+    with open("instagram_cookies.pkl", "wb") as f:
+    f.write(base64.b64decode(os.getenv("COOKIES_BASE64")))
 
-        # Load cookies into the driver
-        cookies = pickle.load(open("instagram_cookies.pkl", "rb"))
-        for cookie in cookies:
-            driver.add_cookie(cookie)
-        print("✅ Cookies loaded from environment variable!")
-    except Exception as e:
-        print(f"⚠️ Error loading cookies from base64 env var: {e}")
+    # Load cookies into the driver
+    cookies = pickle.load(open("instagram_cookies.pkl", "rb"))
+    for cookie in cookies:
+        driver.add_cookie(cookie)
+    print("✅ Cookies loaded from environment variable!")
+except Exception as e:
+    print(f"⚠️ Error loading cookies from base64 env var: {e}")
 
 
 
