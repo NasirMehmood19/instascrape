@@ -103,21 +103,18 @@ INSTAGRAM_PAGES = {
 # --- Load Instagram Cookies ---
 def load_cookies_from_base64(driver):
     try:
-        # Read the base64-encoded cookie data from environment variable or file
-        # Example using file:
-        with open("cookies_base64.txt", "r") as file:
-            base64_cookie_data = file.read().strip()  # Read the entire content of the base64 file
+        # Fetch the base64 encoded cookie data from the environment variable
+        base64_cookie_data = os.getenv("COOKIES_BASE64")  # Replace with your secret variable name
+
+        if not base64_cookie_data:
+            print("⚠️ Base64 cookie data is missing from the environment variable.")
+            return
 
         # Decode the base64 string into the original cookie file
         cookie_data = base64.b64decode(base64_cookie_data)
 
-        # Write the decoded cookie data to a file
-        with open("instagram_cookies.pkl", "wb") as f:
-            f.write(cookie_data)
-
-        # Load the cookies from the pickle file
-        with open("instagram_cookies.pkl", "rb") as f:
-            cookies = pickle.load(f)
+        # Load the cookies from the decoded data
+        cookies = pickle.loads(cookie_data)
 
         # Add cookies to the Selenium WebDriver
         for cookie in cookies:
