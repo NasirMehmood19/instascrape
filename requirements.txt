@@ -1,4 +1,4 @@
-selenium==4.18.1
-psycopg2-binary==2.9.9
-requests==2.31.0
-cloudinary==1.37.0
+selenium
+psycopg2-binary
+requests
+cloudinary
