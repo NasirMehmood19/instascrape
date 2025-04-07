@@ -25,7 +25,7 @@ cloudinary.config(
 
 # --- Selenium WebDriver Setup ---
 insta_options = Options()
-# insta_options.add_argument("--headless=new")
+insta_options.add_argument("--headless=new")
 insta_options.add_argument("--disable-gpu")
 insta_options.add_argument("--window-size=375,812")
 insta_options.add_argument("--disable-blink-features=AutomationControlled")
