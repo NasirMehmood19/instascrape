@@ -95,7 +95,7 @@ INSTAGRAM_PAGES = {
 }
 
 # --- Load Instagram Cookies ---
-def load_cookies(driver):
+def load_cookies(driver, "instagram_cookies.pkl"):
     try:
         # Fetch the base64 encoded cookie data from the environment variable
         base64_cookie_data = os.getenv("COOKIES_BASE64")  # Replace with your secret variable name
