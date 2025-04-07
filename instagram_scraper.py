@@ -123,92 +123,62 @@ def load_cookies(driver):
 
 
 
-# --- Extract Latest Post Data ---
-def get_latest_instagram_post(page_url):
-    driver = webdriver.Chrome(options=options)
+# --- Extract Latest Post & Post Image ---
+def get_instagram_post(page_url):
+    driver = webdriver.Chrome(options=insta_options)
     driver.get("https://www.instagram.com/")
     time.sleep(5)
-    load_cookies(driver)
+
+    load_cookies(driver, "instagram_cookies.pkl")
     driver.refresh()
     time.sleep(5)
+
     driver.get(page_url)
     time.sleep(10)
 
-    # Collect up to 4 candidate post URLs
-    candidate_urls = []
-    for link in driver.find_elements(By.TAG_NAME, "a"):
-        url = link.get_attribute("href")
-        if url and ("/p/" in url or "/reel/" in url):
-            candidate_urls.append(url)
-            if len(candidate_urls) == 4:
-                break
+    post = None
 
-    valid_candidates = []
-    # For each candidate, check if it's pinned and get its timestamp
-    for url in candidate_urls:
-        driver.get(url)
+    # --- Extract Latest Post URL ---
+    try:
+        post_links = driver.find_elements(By.TAG_NAME, "a")
+        for link in post_links:
+            url = link.get_attribute("href")
+            if url and ("/p/" in url or "/reel/" in url):
+                post = {"url": url, "image_url": None, "timestamp": None}
+                break  # Only take the first/latest post
+    except Exception as e:
+        print(f"⚠️ Error finding post URL: {e}")
+
+    if post:
+        driver.get(post["url"])
         time.sleep(5)
 
-        if driver.find_elements(By.XPATH, "//*[contains(text(), 'Pinned')]"):
-            print(f"🔖 Skipping pinned post: {url}")
-            continue
-
-        timestamp = None
-        try:
-            ts_str = driver.find_element(By.TAG_NAME, "time").get_attribute("datetime")
-            timestamp = datetime.fromisoformat(ts_str.replace("Z", "+00:00")) if ts_str else None
-        except Exception as e:
-            print(f"Error getting timestamp for {url}: {e}")
-
-        if timestamp:
-            valid_candidates.append({"url": url, "timestamp": timestamp})
-
-    if not valid_candidates:
-        driver.quit()
-        print("❌ No valid (non-pinned) post found.")
-        return None
-
-    # Select the candidate with the latest timestamp
-    latest_candidate = max(valid_candidates, key=lambda c: c["timestamp"])
-    driver.get(latest_candidate["url"])
-    time.sleep(5)
-
-    post_image = None  # Store image or video URL
-    caption = ""
-
-    if '/reel/' in latest_candidate["url"]:
-        try:
-            video_element = driver.find_element(By.XPATH, "//div[contains(@class, '_aatk _aatn')]//video")
-            post_image = video_element.get_attribute("src")
-        except Exception as e:
-            print(f"Error getting video URL: {e}")
-    else:
+        # --- Extract Post Image ---
         try:
             image_element = driver.find_element(By.XPATH, "//div[contains(@class, '_aagv')]/img")
-            post_image = image_element.get_attribute("src")
+            post["image_url"] = image_element.get_attribute("src")
+            print(f"✅ Post Image URL: {post['image_url']}")
         except Exception as e:
-            print(f"Error getting image URL: {e}")
+            print(f"⚠️ Could not fetch post image: {e}")
 
-    try:
-        caption = driver.find_element(By.XPATH, "//h1[contains(@class, '_ap3a')]").text
-    except Exception as e:
-        print(f"Error getting caption: {e}")
+        # --- Extract Timestamp ---
+        try:
+            time_element = driver.find_element(By.TAG_NAME, "time")
+            ts_str = time_element.get_attribute("datetime")
+            if ts_str:
+                utc_time = datetime.fromisoformat(ts_str.replace("Z", "+00:00"))
+                post["timestamp"] = utc_time.astimezone(timezone(timedelta(hours=5)))  # Convert to Pakistan Time (UTC+5)
+        except Exception as e:
+            print(f"⚠️ Could not get timestamp for {post['url']}: {e}")
 
     driver.quit()
-    return {
-        "url": latest_candidate["url"],
-        "timestamp": latest_candidate["timestamp"],
-        "post_image": post_image,
-        "caption": caption
-    }
+    return post
 
-# --- Upload Image to Cloudinary ---
+# --- Upload Post Image to Cloudinary ---
 def upload_to_cloudinary(image_url, page_name):
-    if not image_url or ".mp4" in image_url:  # Skip videos
-        return image_url  # Return as is for videos
-    response = requests.get(image_url)
-    if response.status_code == 200 and "image" in response.headers.get("Content-Type", ""):
-        cloud_response = cloudinary.uploader.upload(response.content, folder="instagram_post", public_id=page_name)
+    response = requests.get(image_url, stream=True)
+    if response.status_code == 200:
+        cloud_response = cloudinary.uploader.upload(response.raw, folder="instagram_posts", public_id=page_name)
         return cloud_response["secure_url"]
     return None
 
@@ -216,33 +186,54 @@ def upload_to_cloudinary(image_url, page_name):
 def scrape_instagram():
     conn = psycopg2.connect(DATABASE_URL)
     cursor = conn.cursor()
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS instagram_post (
-            id SERIAL PRIMARY KEY,
-            page_name TEXT NOT NULL,
-            link TEXT NOT NULL UNIQUE,
-            post_image TEXT,
-            caption TEXT,
-            timestamp TIMESTAMP
-        );
-    """)
+    
+    # Create table if not exists
+    create_table_query = """
+    CREATE TABLE IF NOT EXISTS instagram_posts (
+        id SERIAL PRIMARY KEY,
+        page_name TEXT NOT NULL,
+        link TEXT NOT NULL UNIQUE,
+        post_image TEXT,
+        timestamp TIMESTAMP
+    );
+    """
+    cursor.execute(create_table_query)
     conn.commit()
 
     for page_name, page_url in INSTAGRAM_PAGES.items():
         print(f"🔍 Scraping Instagram page: {page_name}")
-        post = get_latest_instagram_post(page_url)
-        if post:
-            final_image_url = upload_to_cloudinary(post["post_image"], page_name)
-            cursor.execute("""
-                INSERT INTO instagram_post (page_name, link, post_image, caption, timestamp)
-                VALUES (%s, %s, %s, %s, %s)
-                ON CONFLICT (link) 
-                DO UPDATE SET post_image = EXCLUDED.post_image, caption = EXCLUDED.caption, timestamp = EXCLUDED.timestamp
-            """, (page_name, post["url"], final_image_url, post["caption"] or "No caption", post["timestamp"]))
+        post = get_instagram_post(page_url)
+
+        if post and post["image_url"]:
+            print(f"✅ Latest Post: {post['url']} | Image: {post['image_url']} | timestamp: {post["timestamp"]}")
+
+            # Upload post image to Cloudinary
+            cloudinary_url = upload_to_cloudinary(post["image_url"], page_name)
+
+            # Insert into DB only if new post is found
+            cursor.execute("SELECT link FROM instagram_posts WHERE page_name = %s ORDER BY timestamp DESC LIMIT 1", (page_name,))
+            result = cursor.fetchone()
+
+            if result and result[0] != post["url"]:
+                print(f"🔄 Updating {page_name} with new post...")
+                cursor.execute(
+                    "INSERT INTO instagram_posts (page_name, link, post_image, timestamp) VALUES (%s, %s, %s, %s)",
+                    (page_name, post["url"], cloudinary_url, post["timestamp"])
+                )
+            elif not result:
+                print(f"🆕 Adding first post for {page_name}...")
+                cursor.execute(
+                    "INSERT INTO instagram_posts (page_name, link, post_image, timestamp) VALUES (%s, %s, %s, %s)",
+                    (page_name, post["url"], cloudinary_url, post["timestamp"])
+                )
+
             conn.commit()
+        else:
+            print(f"❌ No new post found for {page_name}")
+
     cursor.close()
     conn.close()
     print("✅ Instagram scraping complete!")
 
+# --- Main Loop ---
 scrape_instagram()
-
