@@ -104,7 +104,7 @@ INSTAGRAM_PAGES = {
 try:
     # Decode from base64 and write the pkl file
     with open("instagram_cookies.pkl", "wb") as f:
-    f.write(base64.b64decode(os.getenv("COOKIES_BASE64")))
+        f.write(base64.b64decode(os.getenv("COOKIES_BASE64")))
 
     # Load cookies into the driver
     cookies = pickle.load(open("instagram_cookies.pkl", "rb"))
