@@ -28,4 +28,6 @@ jobs:
     - name: Run scraper
       run: |
         google-chrome --version
+        ls -la
         python scrapping_insta_with_picture2.py
+
