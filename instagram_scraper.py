@@ -205,7 +205,7 @@ def scrape_instagram():
         post = get_instagram_post(page_url)
 
         if post and post["image_url"]:
-            print(f"✅ Latest Post: {post['url']} | Image: {post['image_url']} | timestamp: {post["timestamp"]}")
+            print(f"✅ Latest Post: {post['url']} | Image: {post['image_url']} | timestamp: {post['timestamp']}")
 
             # Upload post image to Cloudinary
             cloudinary_url = upload_to_cloudinary(post["image_url"], page_name)
