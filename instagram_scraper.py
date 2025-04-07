@@ -127,12 +127,12 @@ def load_cookies(driver):
 def get_latest_instagram_post(page_url):
     driver = webdriver.Chrome(options=options)
     driver.get("https://www.instagram.com/")
-    time.sleep(5)
+    time.sleep(15)
     load_cookies(driver)
     driver.refresh()
-    time.sleep(5)
-    driver.get(page_url)
     time.sleep(10)
+    driver.get(page_url)
+    time.sleep(15)
 
     candidate_urls = []
     for link in driver.find_elements(By.TAG_NAME, "a"):
