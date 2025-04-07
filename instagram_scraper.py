@@ -25,7 +25,7 @@ cloudinary.config(
 
 # --- Selenium WebDriver Setup ---
 options = Options()
-options.add_argument("--headless=new")
+# options.add_argument("--headless=new")
 options.add_argument("--disable-gpu")
 options.add_argument("--window-size=375,812")
 options.add_argument("--disable-blink-features=AutomationControlled")
