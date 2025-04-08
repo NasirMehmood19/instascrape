@@ -1,44 +1,44 @@
-name: Instagram Scraper Cron Job
+# name: Instagram Scraper Cron Job
 
-on:
-  schedule:
-    - cron: '*/20 * * * *'  # Runs every 20 minutes
-  workflow_dispatch:  # allows manual trigger
+# on:
+#   schedule:
+#     - cron: '*/20 * * * *'  # Runs every 20 minutes
+#   workflow_dispatch:  # allows manual trigger
 
-jobs:
-  scrape:
-    runs-on: ubuntu-latest
+# jobs:
+#   scrape:
+#     runs-on: ubuntu-latest
 
-    env:
-      DATABASE_URL: ${{ secrets.DATABASE_URL }}
-      CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
-      CLOUDINARY_API_KEY: ${{ secrets.CLOUDINARY_API_KEY }}
-      CLOUDINARY_API_SECRET: ${{ secrets.CLOUDINARY_API_SECRET }}
-      COOKIES_BASE64: ${{ secrets.COOKIES_BASE64 }}
+#     env:
+#       DATABASE_URL: ${{ secrets.DATABASE_URL }}
+#       CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
+#       CLOUDINARY_API_KEY: ${{ secrets.CLOUDINARY_API_KEY }}
+#       CLOUDINARY_API_SECRET: ${{ secrets.CLOUDINARY_API_SECRET }}
+#       COOKIES_BASE64: ${{ secrets.COOKIES_BASE64 }}
 
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+#     steps:
+#     - name: Checkout code
+#       uses: actions/checkout@v3
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.10'
+#     - name: Set up Python
+#       uses: actions/setup-python@v4
+#       with:
+#         python-version: '3.10'
 
-    - name: Install dependencies
-      run: pip install -r requirements.txt
+#     - name: Install dependencies
+#       run: pip install -r requirements.txt
 
-    - name: Download compatible chromedriver
-      run: |
-        sudo rm -f /usr/local/bin/chromedriver
-        wget https://edgedl.me.gvt1.com/edgedl/chrome/chrome-for-testing/134.0.6998.165/linux64/chromedriver-linux64.zip
-        unzip chromedriver-linux64.zip
-        sudo mv chromedriver-linux64/chromedriver /usr/local/bin/chromedriver
-        sudo chmod +x /usr/local/bin/chromedriver
+#     - name: Download compatible chromedriver
+#       run: |
+#         sudo rm -f /usr/local/bin/chromedriver
+#         wget https://edgedl.me.gvt1.com/edgedl/chrome/chrome-for-testing/134.0.6998.165/linux64/chromedriver-linux64.zip
+#         unzip chromedriver-linux64.zip
+#         sudo mv chromedriver-linux64/chromedriver /usr/local/bin/chromedriver
+#         sudo chmod +x /usr/local/bin/chromedriver
 
 
 
-    - name: Run script
-      env:
-        PATH: /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/usr/local/bin
-      run: python instagram_scraper.py
+#     - name: Run script
+#       env:
+#         PATH: /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/usr/local/bin
+#       run: python instagram_scraper.py
